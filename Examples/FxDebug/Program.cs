@@ -13,12 +13,17 @@ namespace FxDebug
     {
         public override void Before(AspectContext context)
         {
-            Console.Write($"当前类型：{context.Type} 当前执行方法：{context.MethodInfo.Name} 当前方法的参数列表：");
-            // 这里的示例参数都是 string，实际情况请自行判断
-            foreach (var item in context.MethodValues)
+            if (context.IsMethod)
             {
-                Console.Write(item);
+                Console.Write($"当前类型：{context.Type} 当前执行方法：{context.MethodInfo.Name} 当前方法的参数列表：");
+                // 这里的示例参数都是 string，实际情况请自行判断
+                foreach (var item in context.MethodValues)
+                {
+                    Console.Write(item);
+                }
             }
+
+
             Console.WriteLine();
             Console.WriteLine("执行前");
         }
@@ -32,46 +37,79 @@ namespace FxDebug
 
 
     [Interceptor]
-    public class Test
+    public class Test<TTnt>
     {
-        public string A { get; set; }
+        public Test() { }
+        public Test(int a, int b)
+        {
+        }
+
+        [Log] public virtual string A { get; set; }
 
         [Log]
         public virtual string MyMethod(string a, string b, string c, string d, string e, string f, string g, string h)
         {
+            Console.WriteLine(typeof(TTnt));
             Console.WriteLine("运行中");
             return "";
         }
     }
 
 
-    public class AopTest : Test
+    public class AopTest<TTnt> : Test<TTnt>
     {
-        private LogAttribute _LogAttribute;
-        private AspectContextBody _AspectContextBody;
+        private readonly LogAttribute _LogAttribute;
+        private readonly AspectContextBody _AspectContextBody;
+        private readonly LogAttribute aaa;
 
-        public AopTest() : base()
+        public AopTest(int a, int b) : base(a, b)
         {
             _AspectContextBody = new AspectContextBody();
             // 新增
             _AspectContextBody.Type = this.GetType();
-            _AspectContextBody.ConstructorParamters = new object[] { };
+            _AspectContextBody.ConstructorParamters = new object[] { a, b };
+            ;
             _LogAttribute = new LogAttribute();
+            aaa = new LogAttribute();
         }
 
-        public string A { get; set; }
+        public override string A
+        {
+            get
+            {
+                AspectContextBody aspectContextBody = _AspectContextBody.NewInstance;
+                aspectContextBody.IsProperty = true;
+                aspectContextBody.PropertyInfo = GetType().GetProperty("A");
+                _LogAttribute.Before(aspectContextBody);
+                string result = base.A;
+                aspectContextBody.PropertyValue = result;
+                _LogAttribute.After(aspectContextBody);
+                return result;
+            }
+            set
+            {
+                AspectContextBody aspectContextBody = _AspectContextBody.NewInstance;
+                aspectContextBody.IsProperty = true;
+                aspectContextBody.PropertyInfo = GetType().BaseType?.GetProperty("A");
+                aspectContextBody.PropertyValue = value;
+                _LogAttribute.Before(aspectContextBody);
+                base.A = value;
+                _LogAttribute.After(aspectContextBody);
+            }
+        }
 
         [Log]
         public override string MyMethod(string a, string b, string c, string d, string e, string f, string g, string h)
         {
-            _AspectContextBody.IsMethod = true;
-            _AspectContextBody.MethodInfo = (MethodInfo)MethodBase.GetCurrentMethod();
-            _AspectContextBody.MethodValues = new object[] { a, b, c, d, e, f, g, h };
+            AspectContextBody aspectContextBody = _AspectContextBody.NewInstance;
+            aspectContextBody.IsMethod = true;
+            aspectContextBody.MethodInfo = (MethodInfo)MethodInfo.GetCurrentMethod();
+            aspectContextBody.MethodValues = new object[] { a, b, c, d, e, f, g, h };
 
-            _LogAttribute.Before(_AspectContextBody);
-            string str=base.MyMethod(a, b, c, d, e, f, g, h);
-            _AspectContextBody.Result = str;
-            _LogAttribute.After(_AspectContextBody);
+            _LogAttribute.Before(aspectContextBody);
+            string str = base.MyMethod(a, b, c, d, e, f, g, h);
+            aspectContextBody.MethodResult = str;
+            _LogAttribute.After(aspectContextBody);
             return str;
         }
     }
@@ -81,17 +119,14 @@ namespace FxDebug
     {
         static void Main(string[] args)
         {
-            // Test a = new AopTest() as Test;
-
-            // a.MyMethod("", "", "", "", "", "", "", "");
-
             var name = DynamicProxy.GetAssemblyName();
             var ab = AssemblyBuilder.DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave);
             var am = ab.DefineDynamicModule("AOPDebugModule", "AOPDebug1.dll");
             DynamicProxy.SetSave(ab, am);
-            Test test = AopInterceptor.CreateProxyOfClass<Test>();
+            Test<int> test = AopInterceptor.CreateProxyOfClass<Test<int>>(1, 2);
             ab.Save("AopDebug1.dll");
             test.MyMethod("", "", "", "", "", "", "", "");
+            test.A = "666";
             Console.ReadKey();
         }
     }

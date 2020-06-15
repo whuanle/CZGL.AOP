@@ -56,7 +56,7 @@ namespace CZGL.AOP
         /// <summary>
         /// 方法执行返回的结果(如果有)
         /// </summary>
-        object Result { get; }
+        object MethodResult { get; }
     }
 
     public class AspectContextBody : AspectContext
@@ -77,7 +77,22 @@ namespace CZGL.AOP
 
         public object[] MethodValues { get; set; }
 
-        public object Result { get; set; }
+        public object MethodResult { get; set; }
+
+        /// <summary>
+        /// 创建一个新的上下文对象
+        /// </summary>
+        public AspectContextBody NewInstance
+        {
+            get
+            {
+                return new AspectContextBody
+                {
+                    Type = Type,
+                    ConstructorParamters = ConstructorParamters
+                };
+            }
+        }
     }
 
 }

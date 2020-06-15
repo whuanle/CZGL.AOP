@@ -11,10 +11,8 @@ namespace CZGL.AOP
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
     public abstract class ActionAttribute : Attribute
     {
-        public virtual void Before(AspectContext context)
-        {
 
-        }
+        public virtual void Before(AspectContext context) { }
         public virtual object After(AspectContext context) { return null; }
     }
 }
