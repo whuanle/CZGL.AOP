@@ -6,6 +6,7 @@ using System.Text;
 
 namespace CZGL.AOP
 {
+
     /// <summary>
     /// 拦截器上下文
     /// </summary>
@@ -35,7 +36,7 @@ namespace CZGL.AOP
         /// <summary>
         /// 获取拦截的属性值，get 或 set 时的值
         /// </summary>
-        object PropertyValue { get; }
+        object PropertyValue { get; set; }
 
         /// <summary>
         /// 当前代理的是否为方法
@@ -51,12 +52,12 @@ namespace CZGL.AOP
         /// 方法传递的参数
         /// <para>如果此方法没有参数，则 MethodValues.Length = 0，而不是为 null </para>
         /// </summary>
-        object[] MethodValues { get; }
+        object[] MethodValues { get; set; }
 
         /// <summary>
         /// 方法执行返回的结果(如果有)
         /// </summary>
-        object MethodResult { get; }
+        object MethodResult { get; set; }
     }
 
     public class AspectContextBody : AspectContext

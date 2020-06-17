@@ -13,6 +13,6 @@ namespace CZGL.AOP
     {
 
         public virtual void Before(AspectContext context) { }
-        public virtual object After(AspectContext context) { return null; }
+        public virtual object After(AspectContext context) { return default; }
     }
 }

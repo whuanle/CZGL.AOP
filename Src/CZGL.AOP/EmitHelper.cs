@@ -16,33 +16,37 @@ namespace CZGL.AOP
         /// <param name="params">要传递的参数数组</param>
         /// <param name="type">需要创建的数组类型</param>
         /// <param name="isUnBox">是否拆箱<para>默认下，创建的数组是引用类型的数组如object，那么可能出现装箱操作；如果创建的是值类型数组，则可能发生拆箱操作</para></param>
-        public static void EmitArr(ILGenerator iL, Type[] @params, Type type, bool isUnBox = false)
+        public static void EmitArr(ILGenerator iL, ParameterInfo[] @params, Type type, bool isUnBox = false)
         {
             int length = @params.Length;
 
-            iL.Emit(OpCodes.Ldc_I4_S, length);                // 将整数值 N 作为 int32 推送到计算堆栈上，数组的长度
+            iL.Emit(OpCodes.Ldc_I4, length);                // 将整数值 N 作为 int32 推送到计算堆栈上，数组的长度
             iL.Emit(OpCodes.Newarr, type);               // 创建数组
             // 长度为 0 的数组
             if (length == 0)
                 return;
             for (int i = 0; i < length; i++)
             {
+                Type paramType = @params[i].ParameterType;
                 iL.Emit(OpCodes.Dup);   // // 复制计算堆栈上当前最顶端的值，然后将副本推送到计算堆栈上。
                 iL.Emit(OpCodes.Ldc_I4, i);
                 EmitLdarg(iL, i + 1);
 
-                // 拆箱
+                // 拆箱，当前属于值类型数组，因为反射传递的参数属于object
                 if (isUnBox)
                 {
-                    if (!@params[i].IsValueType)
-                        iL.Emit(OpCodes.Unbox, @params[i]);
+                    if (!paramType.IsValueType)
+                        iL.Emit(OpCodes.Unbox, paramType);
                 }
                 // 装箱
                 else
                 {
-                    if (@params[i].IsValueType)
-                        iL.Emit(OpCodes.Box, @params[i]);
+                    if (paramType.IsValueType)
+                        iL.Emit(OpCodes.Box, paramType);
                 }
+
+                if (paramType.IsByRef)       // ref 或 out
+                    iL.Emit(OpCodes.Ldind_Ref);
 
                 iL.Emit(OpCodes.Stelem_Ref);
             }
@@ -70,7 +74,6 @@ namespace CZGL.AOP
                 if (@params.IsValueType)
                     iL.Emit(OpCodes.Box, @params);
             }
-
         }
 
         /// <summary>
@@ -120,7 +123,7 @@ namespace CZGL.AOP
                 return false;
             if (paramterType.IsGenericTypeDefinition)
                 throw new ArgumentException($"无法创建 {paramterType.FullName} 的实例，因为未设置此泛型的参数。");
-            typeBuilder.DefineGenericParameters(paramterType.GetGenericArguments().Select(x=>x.Name).ToArray());
+            typeBuilder.DefineGenericParameters(paramterType.GetGenericArguments().Select(x => x.Name).ToArray());
             return true;
         }
 
@@ -129,9 +132,26 @@ namespace CZGL.AOP
         /// </summary>
         /// <param name="type">泛型类型</param>
         /// <param name="parentType">父类型</param>
-        public static Type CreateDefineGeneric(Type type,Type parentType)
+        public static Type CreateGenericClass(Type type, Type parentType)
         {
             return type.MakeGenericType(parentType.GetGenericArguments());
+        }
+
+        /// <summary>
+        /// 创建泛型方法
+        /// </summary>
+        /// <param name="methodBuilder"></param>
+        /// <param name="methodInfo"></param>
+        /// <returns></returns>
+        public static bool CreateGenericMethod(MethodBuilder methodBuilder, MethodInfo methodInfo)
+        {
+            if (!methodInfo.IsGenericMethod)
+                return false;
+            // 动态构建泛型方法时，不需要预先定义泛型参数
+            //if (methodInfo.IsGenericMethodDefinition)
+            //    throw new ArgumentException($"无法创建 {methodInfo.Name} 的泛型方法，因为未设置此泛型的参数。");
+            methodBuilder.DefineGenericParameters(methodInfo.GetGenericArguments().Select(x => x.Name).ToArray());
+            return true;
         }
     }
 }

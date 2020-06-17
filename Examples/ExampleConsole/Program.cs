@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using CZGL.AOP;
+using System;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
-using CZGL.AOP;
 
-namespace FxDebug
+namespace ExampleConsole
 {
     public class LogAttribute : ActionAttribute
     {
@@ -29,18 +25,14 @@ namespace FxDebug
 
     public interface ITest
     {
-        void MyMethod(string a);
+        void MyMethod();
     }
 
     [Interceptor]
     public class Test : ITest
     {
-        public Test()
-        {
-            Console.WriteLine("构造函数没问题");
-        }
         [Log]
-        public virtual void MyMethod(string a)
+        public virtual void MyMethod()
         {
             Console.WriteLine("运行中");
         }
@@ -52,45 +44,39 @@ namespace FxDebug
 
         private LogAttribute _LogAttribute;
 
-        public TestAOPClass():base()
+        public TestAOPClass()
         {
+            //Error decoding local variables: Signature type sequence must have at least one element.
             _AspectContextBody = new AspectContextBody();
             ((AspectContextBody)_AspectContextBody).Type = GetType();
             ((AspectContextBody)_AspectContextBody).ConstructorParamters = new object[0];
             _LogAttribute = new LogAttribute();
         }
 
-        public override void MyMethod(string a)
+        public override void MyMethod()
         {
             AspectContextBody newInstance = ((AspectContextBody)_AspectContextBody).NewInstance;
             newInstance.IsMethod = true;
             newInstance.MethodInfo = (MethodInfo)MethodBase.GetCurrentMethod();
-            newInstance.MethodValues = new object[] { a};
+            newInstance.MethodValues = new object[0];
             _LogAttribute.Before(newInstance);
-            base.MyMethod((string)newInstance.MethodValues[0]);
+            base.MyMethod();
             _LogAttribute.After(newInstance);
         }
     }
+
 
     class Program
     {
         static void Main(string[] args)
         {
-            var s = typeof(Test).GetConstructors();
-            var z= typeof(TestAOPClass).GetConstructors();
-            var name = DynamicProxy.GetAssemblyName();
-            var ab = AssemblyBuilder.DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave);
-            var am = ab.DefineDynamicModule("AOPDebugModule", "AOPDebug.dll");
-            DynamicProxy.SetSave(ab, am);
-
+            var z = typeof(TestAOPClass).GetMethods();
 
             ITest test1 = AopInterceptor.CreateProxyOfInterface<ITest, Test>();
             Test test2 = AopInterceptor.CreateProxyOfClass<Test>();
-
-            ab.Save("AopDebug.dll");
-
-            test1.MyMethod("");
-            test2.MyMethod("");
+            var zz = test1.GetType().GetMethods();
+            test1.MyMethod();
+            test2.MyMethod();
 
             Console.ReadKey();
         }

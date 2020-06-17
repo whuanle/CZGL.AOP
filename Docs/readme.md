@@ -1,10 +1,8 @@
-﻿using CZGL.AOP;
-using System;
-using System.Linq;
-using System.Reflection;
+CZGL.AOP 有五种生成代理类型的方式，下面一一介绍。
 
-namespace ExampleConsole
-{
+请预先创建如下代码：
+
+```csharp
     public class LogAttribute : ActionAttribute
     {
         public override void Before(AspectContext context)
@@ -15,32 +13,27 @@ namespace ExampleConsole
         public override object After(AspectContext context)
         {
             Console.WriteLine("执行后");
-            return default;
+            return context.MethodResult;
         }
     }
 
+    public interface ITest
+    {
+        void MyMethod();
+    }
 
     [Interceptor]
-    public class Test
+    public class Test:ITest
     {
-        public string A { 
-            get; 
-            set; }
         [Log]
         public void MyMethod()
         {
             Console.WriteLine("运行中");
         }
     }
+```
 
-    class Program
-    {
-        static void Main(string[] args)
-        {
 
-            Test test = AopInterceptor.CreateProxyOfClass<Test>();
-            test.MyMethod();
-            Console.ReadKey();
-        }
-    }
-}
+
+### 1,通过API直接创建
+

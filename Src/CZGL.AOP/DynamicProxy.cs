@@ -4,12 +4,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Security.Cryptography.X509Certificates;
 
 namespace CZGL.AOP
 {
     public class DynamicProxy
     {
+        /// <summary>
+        /// 用于缓存已经生成过的代理类型
+        /// </summary>
         private static ConcurrentDictionary<Type, Type> CacheProxyClass = new ConcurrentDictionary<Type, Type>();
 
         private const string _assemblyName = "AOPAssembly";
@@ -25,6 +27,7 @@ namespace CZGL.AOP
             moduleBuilder = assemblyBuilder.DefineDynamicModule(_ModuleName);
         }
 
+        #region
 #if DEBUG
         // 当其为 DEBUG 时，允许 .NET framework 设置导出 .dll 文件
         // 获取程序集名称
@@ -39,7 +42,9 @@ namespace CZGL.AOP
             moduleBuilder = b;
         }
 #endif
+        #endregion
 
+        #region 生成代理类型
         /// <summary>
         /// 生成代理类型
         /// </summary>
@@ -57,25 +62,82 @@ namespace CZGL.AOP
             if (typeof(TType).GetCustomAttribute(typeof(InterceptorAttribute)) == null)
                 return (TInterface)Activator.CreateInstance(type, parameters);
 
+            // 生成代理类型
+            Type objtype = CreateProxyClassType<TInterface, TType>(Inherit);
+
+            // 返回实例
+            return Activator.CreateInstance(type.IsGenericType ? EmitHelper.CreateGenericClass(objtype, type) : objtype, parameters) as TInterface;
+        }
+
+        /// <summary>
+        /// 创建代理类型
+        /// </summary>
+        /// <param name="implementationType">当前类型</param>
+        /// <param name="Inherit">是否直接继承类型</param>
+        /// <returns></returns>
+        public static Type CreateProxyClassType(Type implementationType)
+        {
+            return CreateProxyClassType(implementationType, implementationType, true);
+        }
+
+        /// <summary>
+        /// 生成代理类型
+        /// </summary>
+        /// <param name="interfaceType">实现的接口或继承</param>
+        /// <param name="implementationType">实现的类型</param>
+        /// <param name="Inherit">是否通过继承生成</param>
+        /// <returns></returns>
+        public static Type CreateProxyClassType(Type interfaceType, Type implementationType, bool Inherit = false)
+        {
+            Type type = implementationType;
+
+            if (implementationType.GetCustomAttribute(typeof(InterceptorAttribute)) == null)
+                return type;
+
             TypeBuilder typeBuilder;
             if (Inherit)
             {
-                typeBuilder = moduleBuilder.DefineType(type.Name + _TypeName, TypeAttributes.Public, type);
+                if (CacheProxyClass.ContainsKey(implementationType))
+                    return CacheProxyClass[type];
+                typeBuilder = moduleBuilder.DefineType(type.Name + _TypeName, type.Attributes, type);
             }
             else
             {
-                typeBuilder = moduleBuilder.DefineType(type.Name + _TypeName, TypeAttributes.Public, type, new Type[] { typeof(TInterface) });
+                if (CacheProxyClass.ContainsKey(implementationType))
+                    return CacheProxyClass[interfaceType];
+                typeBuilder = moduleBuilder.DefineType(type.Name + _TypeName, type.Attributes, type);
             }
 
             // 判断是否为泛型，如果是则构造其为泛型
             bool isGeneric = EmitHelper.DefineGenericParameters(typeBuilder, type);
 
             // 生成代理类型
-            Type objtype = ActionInterceptor<TType>(typeBuilder, type, Inherit);
-
-           // 返回实例
-            return Activator.CreateInstance(isGeneric ? EmitHelper.CreateDefineGeneric(objtype, type) : objtype, parameters) as TInterface;
+            Type proxyType = ActionInterceptor(type, typeBuilder, Inherit);
+            CacheProxyClass.TryAdd(implementationType, proxyType);
+            return proxyType;
         }
+
+        /// <summary>
+        /// 生成代理类型
+        /// </summary>
+        /// <typeparam name="TInterface"></typeparam>
+        /// <typeparam name="TType"></typeparam>
+        /// <param name="parameters"></param>
+        /// <param name="Inherit"></param>
+        /// <returns></returns>
+        public static Type CreateProxyClassType<TInterface, TType>(bool Inherit = false)
+            where TInterface : class
+            where TType : TInterface
+        {
+            Type interfaceType = typeof(TInterface);
+            Type implementationType = typeof(TType);
+
+            return CreateProxyClassType(interfaceType, implementationType, Inherit);
+        }
+
+        #endregion
+
+        #region 拦截代理类型
 
         /// <summary>
         /// 拦截 Action 并且生成类型
@@ -83,9 +145,8 @@ namespace CZGL.AOP
         /// <typeparam name="TType">被代理的类</typeparam>
         /// <param name="typeBuilder">生成器</param>
         /// <param name="parameters">构造函数参数</param>
-        /// <param name="type">被代理的类的类型</param>
         /// <param name="Inherit">是否属于类继承</param>
-        private static Type ActionInterceptor<TType>(TypeBuilder typeBuilder, Type type, bool Inherit)
+        private static Type ActionInterceptor(Type parentType, TypeBuilder typeBuilder, bool Inherit)
         {
             // 生成字段，用于存放拦截的上下文信息
             FieldBuilder aspectContextField = typeBuilder.DefineField("_" + nameof(AspectContextBody), typeof(AspectContext), FieldAttributes.Private | FieldAttributes.InitOnly);
@@ -93,29 +154,29 @@ namespace CZGL.AOP
             // 存储类成员使用的特性拦截器
             Dictionary<Type, FieldBuilder> fieldList;
 
-            var properties = type.GetProperties();
-            var methods = type.GetMethods();
+            var properties = parentType.GetProperties();
+            var methods = parentType.GetMethods();
 
             fieldList = GetActionAttribute(properties, methods, typeBuilder);
 
-            ConstructorInfo[] constructorInfos = type.GetConstructors();
+            ConstructorInfo[] constructorInfos = parentType.GetConstructors();
 
             // 代理类实现与被代理类一致的构造函数
             // 代理类初始化各个拦截器
             foreach (var item in constructorInfos)
             {
-                Type[] types = item.GetParameters().Select(x => x.ParameterType).ToArray();
+                ParameterInfo[] paramTypes = item.GetParameters();
                 var constructorBuilder = typeBuilder.DefineConstructor(
-                    MethodAttributes.Public,
-                    CallingConventions.Standard,
-                    types);
+                    item.Attributes,
+                    item.CallingConvention,
+                    paramTypes.Select(x => x.ParameterType).ToArray());
 
                 var conIL = constructorBuilder.GetILGenerator();
 
-                if (types.Length != 0)
-                    foreach (var itemtmp in types)
+                if (paramTypes.Length != 0)
+                    foreach (var itemtmp in paramTypes)
                     {
-                        conIL.DeclareLocal(itemtmp);
+                        conIL.DeclareLocal(itemtmp.ParameterType);
                     }
 
                 // 实例函数使用 从 Ldarg.1 开始
@@ -128,8 +189,8 @@ namespace CZGL.AOP
                 // * 实例化拦截器上下文、为上下文设置属性、构造拦截器
 
                 // 如果构造函数有参数的话
-                if (types.Length != 0)
-                    MethodParamters(types.Length, conIL);// 处理所有参数
+                if (paramTypes.Length > 0)
+                    MethodParamters(paramTypes.Length, conIL);// 处理所有参数
 
                 // 调用父类的构造函数
                 conIL.Emit(OpCodes.Call, item);
@@ -143,20 +204,18 @@ namespace CZGL.AOP
                 // 设置当前代理类型
                 conIL.Emit(OpCodes.Ldarg_0);
                 conIL.Emit(OpCodes.Ldfld, aspectContextField);
+                conIL.Emit(OpCodes.Castclass,typeof(AspectContextBody));
                 conIL.Emit(OpCodes.Ldarg_0);
-                conIL.Emit(OpCodes.Call, type.GetMethod(nameof(GetType)));
+                conIL.Emit(OpCodes.Call, parentType.GetMethod(nameof(GetType)));
                 conIL.Emit(OpCodes.Callvirt, typeof(AspectContextBody).GetMethod($"set_{nameof(AspectContextBody.Type)}"));
 
                 // 设置构造函数参数列表
-
                 conIL.Emit(OpCodes.Ldarg_0);
                 conIL.Emit(OpCodes.Ldfld, aspectContextField);
-                EmitHelper.EmitArr(conIL, types, typeof(object));
-                //conIL.Emit(OpCodes.Ldc_I4_2);
-                //conIL.Emit(OpCodes.Newobj,typeof(object));
-                //conIL.Emit(OpCodes.Dup);
-                //conIL.Emit(OpCodes.Ldarg_1);
+                conIL.Emit(OpCodes.Castclass, typeof(AspectContextBody));
+                EmitHelper.EmitArr(conIL, paramTypes, typeof(object));
                 conIL.Emit(OpCodes.Callvirt, typeof(AspectContextBody).GetMethod($"set_{nameof(AspectContextBody.ConstructorParamters)}"));
+
 
 
                 // 实例化所有拦截器
@@ -180,11 +239,13 @@ namespace CZGL.AOP
 
                 MethodBuilder methodBuilder = typeBuilder.DefineMethod(
                     item.Name,
-                    MethodAttributes.Public | MethodAttributes.Virtual,
+                    MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig,
                     CallingConventions.Standard,
                     returnType,
                     types);
 
+                // 判断是否为泛型方法并生成泛型类型
+                bool isGeneric = EmitHelper.CreateGenericMethod(methodBuilder, item);
 
                 var iL = methodBuilder.GetILGenerator();
 
@@ -251,27 +312,42 @@ namespace CZGL.AOP
                 {
                     MethodBuilder setMethodBuilder = typeBuilder.DefineMethod(
                         getMethodInfo.Name,
-                        (EmitHelper.GetVisibility(getMethodInfo)) | MethodAttributes.Virtual,
+                        MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig,
                         CallingConventions.Standard,
                         getMethodInfo.ReturnType,
                         null);
-                    PropertyGetProxy(setMethodBuilder.GetILGenerator(), typeof(TType), getMethodInfo, item, aspectContextField, fieldList[actionAttr.GetType()], actionAttr);
+                    PropertyGetProxy(setMethodBuilder.GetILGenerator(), parentType, getMethodInfo, item, aspectContextField, fieldList[actionAttr.GetType()], actionAttr);
                 }
 
                 void SetBuilder()
                 {
                     MethodBuilder getMethodBuilder = typeBuilder.DefineMethod(
                         setMethodInfo.Name,
-                        (EmitHelper.GetVisibility(setMethodInfo)) | MethodAttributes.Virtual,
+                        MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig,
                         CallingConventions.Standard,
                         setMethodInfo.ReturnType,
                         setMethodInfo.GetParameters().Select(x => x.ParameterType).ToArray());
-                    PropertyGetProxy(getMethodBuilder.GetILGenerator(), typeof(TType), setMethodInfo, item, aspectContextField, fieldList[actionAttr.GetType()], actionAttr);
+                    PropertyGetProxy(getMethodBuilder.GetILGenerator(), parentType, setMethodInfo, item, aspectContextField, fieldList[actionAttr.GetType()], actionAttr);
                 }
             }
 
             return typeBuilder.CreateTypeInfo();
         }
+
+        /// <summary>
+        /// 拦截 Action 并且生成类型
+        /// </summary>
+        /// <typeparam name="TType">被代理的类</typeparam>
+        /// <param name="typeBuilder">生成器</param>
+        /// <param name="parameters">构造函数参数</param>
+        /// <param name="type">被代理的类的类型</param>
+        /// <param name="Inherit">是否属于类继承</param>
+        private static Type ActionInterceptor<TType>(TypeBuilder typeBuilder, bool Inherit)
+        {
+            return ActionInterceptor(typeof(TType), typeBuilder, Inherit);
+        }
+
+        #endregion
 
         /// <summary>
         /// 获取这个类型属性和方法使用了修饰的拦截器特性
@@ -303,7 +379,7 @@ namespace CZGL.AOP
                 var actionType = actionAttribute.GetType();
                 if (dic.ContainsKey(actionType))
                     continue;
-                dic.Add(actionType, typeBuilder.DefineField("_" + actionType.Name, actionType, FieldAttributes.Private));
+                dic.Add(actionType, typeBuilder.DefineField("_" + actionType.Name, actionType, FieldAttributes.Private | FieldAttributes.InitOnly));
             }
 
             return dic;
@@ -324,6 +400,37 @@ namespace CZGL.AOP
             }
         }
 
+
+        /// <summary>
+        /// 用于拦截方法参数，然后从上下文中传递过去
+        /// <para></para>
+        /// </summary>
+        /// <param name="methoded">被代理的方法</param>
+        /// <param name="conIL"></param>
+        /// <param name="contextMethod">上下文存储方法参数的属性的get方法</param>
+        private static void MethodProxyParamters(MethodInfo methoded, ILGenerator conIL, MethodInfo contextMethod)
+        {
+            Type[] paramTypes = methoded.GetParameters().Select(x => x.ParameterType).ToArray();
+            int length = paramTypes.Length;
+            for (int i = 0; i < length; i++)
+            {
+                if (paramTypes[i].IsByRef)
+                {
+                    MethodParamters(i + 1, conIL);
+                    continue;
+                }
+                conIL.Emit(OpCodes.Ldloc_0);    // aspectContextBody
+                conIL.Emit(OpCodes.Callvirt, contextMethod);   // 上下文存放方法参数的数组
+                conIL.Emit(OpCodes.Ldc_I4, i);           // 取出数组第 0 位数据
+                conIL.Emit(OpCodes.Ldelem_Ref);         // 将位于指定数组索引处的包含对象引用的元素作为 O 类型（对象引用）加载到计算堆栈的顶部。
+
+                if (paramTypes[i].IsValueType)   // 参数是值类型，需要拆箱
+                    conIL.Emit(OpCodes.Unbox, paramTypes[i]);     // 将值类型的已装箱的表示形式转换为其未装箱的形式。
+                else if (paramTypes[i] != typeof(object))
+                    conIL.Emit(OpCodes.Castclass, paramTypes[i]);   // 将引用类型转为另一个引用类型
+
+            }
+        }
 
         /// <summary>
         /// 为方法、构造函数处理参数
@@ -358,7 +465,7 @@ namespace CZGL.AOP
         private static void MethodProxy(ILGenerator iL, MethodInfo methodInfo, FieldBuilder aspectContextField, FieldBuilder fieldBuilder, ActionAttribute actionAttr)
         {
             Type returnType = methodInfo.ReturnType; // 返回类型
-            Type[] types = methodInfo.GetParameters().Select(x => x.ParameterType).ToArray(); // 参数列表
+            ParameterInfo[] types = methodInfo.GetParameters(); // 参数列表
             // 五个步骤：
             // * 为上下文设置参数
             // * 执行 拦截器的 Before()
@@ -373,14 +480,15 @@ namespace CZGL.AOP
                 iL.DeclareLocal(returnType);   // 用于接收返回结果,堆栈在 Stloc_1
 
             // 创建一个新的上下文
-            iL.Emit(OpCodes.Ldarg_0);
-            iL.Emit(OpCodes.Ldfld, aspectContextField);
-            iL.Emit(OpCodes.Callvirt, typeof(AspectContextBody).GetMethod($"get_{nameof(AspectContextBody.NewInstance)}"));
-            iL.Emit(OpCodes.Stloc_0);       // 存到堆栈 0 
+            iL.Emit(OpCodes.Ldarg_0);       // this
+            iL.Emit(OpCodes.Ldfld, aspectContextField); // _AspectContextBody
+            iL.Emit(OpCodes.Castclass,typeof(AspectContextBody));
+            iL.Emit(OpCodes.Callvirt, typeof(AspectContextBody).GetMethod($"get_{nameof(AspectContextBody.NewInstance)}")); // NewInstance
+            iL.Emit(OpCodes.Stloc_0);       // 调用 aspectContextBody 的 NewInstance 属性
 
             // ①
             // IsMethod = true
-            iL.Emit(OpCodes.Ldloc_0);
+            iL.Emit(OpCodes.Ldloc_0);   // aspectContextBody
             iL.Emit(OpCodes.Ldc_I4_1);  // 0 false 1 true
             iL.Emit(OpCodes.Callvirt, typeof(AspectContextBody).GetMethod($"set_{nameof(AspectContextBody.IsMethod)}"));
             // MethidInfo
@@ -401,26 +509,27 @@ namespace CZGL.AOP
             iL.Emit(OpCodes.Nop);
 
             // ③ 执行方法
+            if (returnType != typeof(void))
+                iL.Emit(OpCodes.Ldloc_0); // aspectContextBody
+
             iL.Emit(OpCodes.Ldarg_0);
-            MethodParamters(types.Length, iL);
-            iL.Emit(OpCodes.Call, methodInfo);
-            if (returnType == typeof(void))
-                iL.Emit(OpCodes.Pop);
+            // 如果此方法没有参数
+            if (types.Length == 0)
+                MethodParamters(types.Length, iL);
             else
-                iL.Emit(OpCodes.Stloc_1); // 有返回值时，存到堆栈 1
+            {
+                MethodProxyParamters(methodInfo, iL, typeof(AspectContextBody).GetMethod($"get_{nameof(AspectContextBody.MethodValues)}"));
+            }
+            iL.Emit(OpCodes.Call, methodInfo);
 
             if (returnType != typeof(void))
             {
-                // 将返回结果存储到上下文中的 Result 属性
+                // 将返回结果存储到上下文中
 
-                iL.Emit(OpCodes.Ldloc_0);
-                iL.Emit(OpCodes.Ldloc_1);
                 // 值类型需要装箱
                 if (returnType.IsValueType)
-                    iL.Emit(OpCodes.Box, typeof(object));
-
+                    iL.Emit(OpCodes.Box, returnType);
                 iL.Emit(OpCodes.Callvirt, typeof(AspectContextBody).GetMethod($"set_{nameof(AspectContextBody.MethodResult)}"));
-                iL.Emit(OpCodes.Nop);
             }
 
 
@@ -429,13 +538,15 @@ namespace CZGL.AOP
             iL.Emit(OpCodes.Ldfld, fieldBuilder);
             iL.Emit(OpCodes.Ldloc_0);
             iL.Emit(OpCodes.Callvirt, actionAttr.GetType().GetMethod(nameof(ActionAttribute.After)));
-            iL.Emit(OpCodes.Pop);
-
             if (returnType != typeof(void))
             {
+                if (returnType.IsValueType)
+                    iL.Emit(OpCodes.Unbox_Any, methodInfo.ReturnType);
+                else if (returnType != typeof(object))
+                    iL.Emit(OpCodes.Castclass, methodInfo.ReturnType);
+                iL.Emit(OpCodes.Stloc_1);
                 iL.Emit(OpCodes.Ldloc_1);       // 取出堆栈中的返回值
             }
-
             // ⑤
             iL.Emit(OpCodes.Ret);
         }
@@ -518,28 +629,35 @@ namespace CZGL.AOP
             iL.Emit(OpCodes.Ldloc_0);
             iL.Emit(OpCodes.Callvirt, actionAttr.GetType().GetMethod(nameof(ActionAttribute.Before)));
             iL.Emit(OpCodes.Nop);
-            iL.Emit(OpCodes.Ldarg_0);
             // ③ 执行方法
             if (isSet)
             {
-                iL.Emit(OpCodes.Ldarg_1);
+                iL.Emit(OpCodes.Ldarg_0);
+                iL.Emit(OpCodes.Ldloc_0);
+                iL.Emit(OpCodes.Callvirt, typeof(AspectContextBody).GetMethod($"get_{nameof(AspectContextBody.PropertyValue)}"));
+                if (returnType.IsValueType)
+                    iL.Emit(OpCodes.Box, returnType);
+                else if (returnType != typeof(object))
+                    iL.Emit(OpCodes.Castclass, returnType);
+            }
+            else
+            {
+                iL.Emit(OpCodes.Ldloc_0);
+                iL.Emit(OpCodes.Ldarg_0);
             }
             iL.Emit(OpCodes.Call, methodInfo);
-            if (returnType != typeof(void))
-                iL.Emit(OpCodes.Stloc_1); // 有返回值时，存到堆栈 1
 
+
+            // 有返回值时，使用上下文存储
             if (returnType != typeof(void))
             {
-                // 将返回结果存储到上下文中的 Result 属性
-
-                iL.Emit(OpCodes.Ldloc_0);
-                iL.Emit(OpCodes.Ldloc_1);
                 // 值类型需要装箱
                 if (returnType.IsValueType)
-                    iL.Emit(OpCodes.Box, typeof(object));
-
+                    iL.Emit(OpCodes.Box, returnType);
+                else if (returnType != typeof(object))
+                    iL.Emit(OpCodes.Castclass, returnType);
                 iL.Emit(OpCodes.Callvirt, typeof(AspectContextBody).GetMethod($"set_{nameof(AspectContextBody.PropertyValue)}"));
-                iL.Emit(OpCodes.Nop);
+
             }
 
 
@@ -548,15 +666,23 @@ namespace CZGL.AOP
             iL.Emit(OpCodes.Ldfld, fieldBuilder);
             iL.Emit(OpCodes.Ldloc_0);
             iL.Emit(OpCodes.Callvirt, actionAttr.GetType().GetMethod(nameof(ActionAttribute.After)));
-            iL.Emit(OpCodes.Pop);
 
             if (returnType != typeof(void))
             {
+                if (returnType.IsValueType)
+                    iL.Emit(OpCodes.Unbox_Any, methodInfo.ReturnType);
+                else
+                    iL.Emit(OpCodes.Castclass, methodInfo.ReturnType);
+                iL.Emit(OpCodes.Stloc_1);
                 iL.Emit(OpCodes.Ldloc_1);       // 取出堆栈中的返回值
             }
-
+            else
+            {
+                iL.Emit(OpCodes.Pop);
+            }
             // ⑤
             iL.Emit(OpCodes.Ret);
         }
+
     }
 }
