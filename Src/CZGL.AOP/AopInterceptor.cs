@@ -35,6 +35,19 @@ namespace CZGL.AOP
             return DynamicProxy.CreateInterceptor<TType, TType>(parameters, true);
         }
 
+        /// <summary>
+        /// 通过指定 Type 来代理属性或方法
+        /// <para>此方式可以实现非入侵性代理类型</para>
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="propertys"></param>
+        public static TType CreateProxyOfType<TType>(ProxyTypeBuilder builder, object[] parameters = null)
+                        where TType : class
+        {
+            ThrowHasConstructor(typeof(TType), parameters?.Select(x => x.GetType()).ToArray());
+            return DynamicProxy.CreateInterceptor<TType>(typeof(TType), builder.Build(), parameters);
+        }
+
         #region
 
         /// <summary>

@@ -18,8 +18,9 @@ namespace ExampleConsole
             Console.WriteLine("执行后");
             if (context.IsMethod)
                 return context.MethodResult;
-            else
+            else if (context.IsProperty)
                 return context.PropertyValue;
+            return null;
         }
     }
 
@@ -31,6 +32,7 @@ namespace ExampleConsole
     [Interceptor]
     public class Test : ITest
     {
+        [Log] public virtual string A { get; set; }
         [Log]
         public virtual void MyMethod()
         {
@@ -38,30 +40,12 @@ namespace ExampleConsole
         }
     }
 
-    public class TestAOPClass : Test
+    public class TestNo
     {
-        private readonly AspectContext _AspectContextBody;
-
-        private LogAttribute _LogAttribute;
-
-        public TestAOPClass()
+        public virtual string A { get; set; }
+        public virtual void MyMethod()
         {
-            //Error decoding local variables: Signature type sequence must have at least one element.
-            _AspectContextBody = new AspectContextBody();
-            ((AspectContextBody)_AspectContextBody).Type = GetType();
-            ((AspectContextBody)_AspectContextBody).ConstructorParamters = new object[0];
-            _LogAttribute = new LogAttribute();
-        }
-
-        public override void MyMethod()
-        {
-            AspectContextBody newInstance = ((AspectContextBody)_AspectContextBody).NewInstance;
-            newInstance.IsMethod = true;
-            newInstance.MethodInfo = (MethodInfo)MethodBase.GetCurrentMethod();
-            newInstance.MethodValues = new object[0];
-            _LogAttribute.Before(newInstance);
-            base.MyMethod();
-            _LogAttribute.After(newInstance);
+            Console.WriteLine("运行中");
         }
     }
 
@@ -70,14 +54,16 @@ namespace ExampleConsole
     {
         static void Main(string[] args)
         {
-            var z = typeof(TestAOPClass).GetMethods();
-
             ITest test1 = AopInterceptor.CreateProxyOfInterface<ITest, Test>();
             Test test2 = AopInterceptor.CreateProxyOfClass<Test>();
-            var zz = test1.GetType().GetMethods();
             test1.MyMethod();
             test2.MyMethod();
 
+            Console.WriteLine("---");
+
+            TestNo test3 = AopInterceptor.CreateProxyOfType<TestNo>(new ProxyTypeBuilder()
+                .AddProxyMethod(typeof(LogAttribute), typeof(TestNo).GetMethod("MyMethod")));
+            test3.MyMethod();
             Console.ReadKey();
         }
     }

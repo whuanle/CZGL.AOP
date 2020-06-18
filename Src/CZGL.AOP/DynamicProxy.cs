@@ -70,6 +70,24 @@ namespace CZGL.AOP
         }
 
         /// <summary>
+        ///  创建非侵入式代理类型
+        /// </summary>
+        /// <typeparam name="TType"></typeparam>
+        /// <param name="implementationType"></param>
+        /// <param name="noAction"></param>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        internal static TType CreateInterceptor<TType>(Type implementationType, NoActionAttributeModel noAction,params object[] parameters)
+            where TType:class
+        {
+            // 生成代理类型
+            Type objtype = CreateProxyClassTypeNoAttribute(implementationType,noAction);
+
+            // 返回实例
+            return Activator.CreateInstance(implementationType.IsGenericType ? EmitHelper.CreateGenericClass(objtype, implementationType) : objtype, parameters) as TType;
+        }
+
+        /// <summary>
         /// 创建代理类型
         /// </summary>
         /// <param name="implementationType">当前类型</param>
@@ -78,6 +96,24 @@ namespace CZGL.AOP
         public static Type CreateProxyClassType(Type implementationType)
         {
             return CreateProxyClassType(implementationType, implementationType, true);
+        }
+
+        /// <summary>
+        /// 生成代理类型
+        /// </summary>
+        /// <typeparam name="TInterface"></typeparam>
+        /// <typeparam name="TType"></typeparam>
+        /// <param name="parameters"></param>
+        /// <param name="Inherit"></param>
+        /// <returns></returns>
+        public static Type CreateProxyClassType<TInterface, TType>(bool Inherit = false)
+            where TInterface : class
+            where TType : TInterface
+        {
+            Type interfaceType = typeof(TInterface);
+            Type implementationType = typeof(TType);
+
+            return CreateProxyClassType(interfaceType, implementationType, Inherit);
         }
 
         /// <summary>
@@ -117,22 +153,30 @@ namespace CZGL.AOP
             return proxyType;
         }
 
-        /// <summary>
-        /// 生成代理类型
-        /// </summary>
-        /// <typeparam name="TInterface"></typeparam>
-        /// <typeparam name="TType"></typeparam>
-        /// <param name="parameters"></param>
-        /// <param name="Inherit"></param>
-        /// <returns></returns>
-        public static Type CreateProxyClassType<TInterface, TType>(bool Inherit = false)
-            where TInterface : class
-            where TType : TInterface
-        {
-            Type interfaceType = typeof(TInterface);
-            Type implementationType = typeof(TType);
 
-            return CreateProxyClassType(interfaceType, implementationType, Inherit);
+
+        /// <summary>
+        /// 通过非侵入式来生成代理类型
+        /// </summary>
+        /// <param name="interfaceType">实现的接口或继承</param>
+        /// <param name="implementationType">实现的类型</param>
+        /// <param name="Inherit">是否通过继承生成</param>
+        /// <returns></returns>
+        private static Type CreateProxyClassTypeNoAttribute(Type implementationType, NoActionAttributeModel noAction)
+        {
+            Type type = implementationType;
+            TypeBuilder typeBuilder;
+                if (CacheProxyClass.ContainsKey(implementationType))
+                    return CacheProxyClass[type];
+                typeBuilder = moduleBuilder.DefineType(type.Name + _TypeName, type.Attributes, type);
+
+            // 判断是否为泛型，如果是则构造其为泛型
+            bool isGeneric = EmitHelper.DefineGenericParameters(typeBuilder, type);
+
+            // 生成代理类型
+            Type proxyType = ActionInterceptor(type, typeBuilder, true, noAction);
+            CacheProxyClass.TryAdd(implementationType, proxyType);
+            return proxyType;
         }
 
         #endregion
@@ -145,8 +189,22 @@ namespace CZGL.AOP
         /// <typeparam name="TType">被代理的类</typeparam>
         /// <param name="typeBuilder">生成器</param>
         /// <param name="parameters">构造函数参数</param>
+        /// <param name="type">被代理的类的类型</param>
         /// <param name="Inherit">是否属于类继承</param>
-        private static Type ActionInterceptor(Type parentType, TypeBuilder typeBuilder, bool Inherit)
+        private static Type ActionInterceptor<TType>(TypeBuilder typeBuilder, bool Inherit)
+        {
+            return ActionInterceptor(typeof(TType), typeBuilder, Inherit);
+        }
+
+        /// <summary>
+        /// 拦截 Action 并且生成类型
+        /// </summary>
+        /// <typeparam name="TType">被代理的类</typeparam>
+        /// <param name="parentType">父类</param>
+        /// <param name="typeBuilder">生成器</param>
+        /// <param name="Inherit">是否属于类继承</param>
+        /// <param name="noAction">非嵌入式代理时</param>
+        private static Type ActionInterceptor(Type parentType, TypeBuilder typeBuilder, bool Inherit, NoActionAttributeModel noAction=null)
         {
             // 生成字段，用于存放拦截的上下文信息
             FieldBuilder aspectContextField = typeBuilder.DefineField("_" + nameof(AspectContextBody), typeof(AspectContext), FieldAttributes.Private | FieldAttributes.InitOnly);
@@ -157,7 +215,7 @@ namespace CZGL.AOP
             var properties = parentType.GetProperties();
             var methods = parentType.GetMethods();
 
-            fieldList = GetActionAttribute(properties, methods, typeBuilder);
+            fieldList =noAction==null? GetActionAttribute(properties, methods, typeBuilder): GetActionAttribute(typeBuilder,noAction);
 
             ConstructorInfo[] constructorInfos = parentType.GetConstructors();
 
@@ -226,11 +284,23 @@ namespace CZGL.AOP
             // 代理拦截方法
             foreach (var item in methods)
             {
+                // 判断是否为侵入式代理
                 // 是否设置了拦截器的方法
-                var actionAttr = (ActionAttribute)item.GetCustomAttributes().FirstOrDefault(x => x.GetType().BaseType == typeof(ActionAttribute));
-                if (actionAttr is null)
+                ActionAttribute actionAttr;
+                Type actionAttrType;
+                if (noAction == null)
                 {
-                    continue;
+                    actionAttr = (ActionAttribute)item.GetCustomAttributes().FirstOrDefault(x => x.GetType().BaseType == typeof(ActionAttribute));
+                    if (actionAttr is null)
+                        continue;
+                    actionAttrType = actionAttr.GetType();
+                }
+                else
+                {
+                    string actionName;
+                    if(!noAction.MethodNames.TryGetValue(item,out actionName))
+                        continue;
+                    actionAttrType = noAction.Actions[actionName];
                 }
 
                 // 获取方法的参数
@@ -250,7 +320,7 @@ namespace CZGL.AOP
                 var iL = methodBuilder.GetILGenerator();
 
                 // 生成代理方法
-                MethodProxy(iL, item, aspectContextField, fieldList[actionAttr.GetType()], actionAttr);
+                MethodProxy(iL, item, aspectContextField, fieldList[actionAttrType], actionAttrType);
 
                 // 如果属于继承，则需要重写方法
                 if (Inherit)
@@ -334,19 +404,6 @@ namespace CZGL.AOP
             return typeBuilder.CreateTypeInfo();
         }
 
-        /// <summary>
-        /// 拦截 Action 并且生成类型
-        /// </summary>
-        /// <typeparam name="TType">被代理的类</typeparam>
-        /// <param name="typeBuilder">生成器</param>
-        /// <param name="parameters">构造函数参数</param>
-        /// <param name="type">被代理的类的类型</param>
-        /// <param name="Inherit">是否属于类继承</param>
-        private static Type ActionInterceptor<TType>(TypeBuilder typeBuilder, bool Inherit)
-        {
-            return ActionInterceptor(typeof(TType), typeBuilder, Inherit);
-        }
-
         #endregion
 
         /// <summary>
@@ -382,6 +439,18 @@ namespace CZGL.AOP
                 dic.Add(actionType, typeBuilder.DefineField("_" + actionType.Name, actionType, FieldAttributes.Private | FieldAttributes.InitOnly));
             }
 
+            return dic;
+        }
+
+        private static Dictionary<Type, FieldBuilder> GetActionAttribute( TypeBuilder typeBuilder, NoActionAttributeModel noAction)
+        {
+            Dictionary<Type, FieldBuilder> dic = new Dictionary<Type, FieldBuilder>();
+
+            foreach (var item in noAction.Actions)
+            {
+                var actionType = item.Value;
+                dic.Add(actionType, typeBuilder.DefineField("_" + actionType.Name, actionType, FieldAttributes.Private | FieldAttributes.InitOnly));
+            }
             return dic;
         }
 
@@ -462,7 +531,7 @@ namespace CZGL.AOP
         /// <param name="aspectContextField">类的上下文</param>
         /// <param name="fieldBuilder">使用的拦截器字段</param>
         /// <param name="actionAttr">使用的拦截器</param>
-        private static void MethodProxy(ILGenerator iL, MethodInfo methodInfo, FieldBuilder aspectContextField, FieldBuilder fieldBuilder, ActionAttribute actionAttr)
+        private static void MethodProxy(ILGenerator iL, MethodInfo methodInfo, FieldBuilder aspectContextField, FieldBuilder fieldBuilder, Type actionAttr)
         {
             Type returnType = methodInfo.ReturnType; // 返回类型
             ParameterInfo[] types = methodInfo.GetParameters(); // 参数列表
@@ -505,7 +574,7 @@ namespace CZGL.AOP
             iL.Emit(OpCodes.Ldarg_0);
             iL.Emit(OpCodes.Ldfld, fieldBuilder);
             iL.Emit(OpCodes.Ldloc_0);
-            iL.Emit(OpCodes.Callvirt, actionAttr.GetType().GetMethod(nameof(ActionAttribute.Before)));
+            iL.Emit(OpCodes.Callvirt, actionAttr.GetMethod(nameof(ActionAttribute.Before)));
             iL.Emit(OpCodes.Nop);
 
             // ③ 执行方法
@@ -537,7 +606,7 @@ namespace CZGL.AOP
             iL.Emit(OpCodes.Ldarg_0);
             iL.Emit(OpCodes.Ldfld, fieldBuilder);
             iL.Emit(OpCodes.Ldloc_0);
-            iL.Emit(OpCodes.Callvirt, actionAttr.GetType().GetMethod(nameof(ActionAttribute.After)));
+            iL.Emit(OpCodes.Callvirt, actionAttr.GetMethod(nameof(ActionAttribute.After)));
             if (returnType != typeof(void))
             {
                 if (returnType.IsValueType)
@@ -562,7 +631,6 @@ namespace CZGL.AOP
         {
             PropertyProxy(iL, type, getMethod, propertyInfo, aspectContextField, fieldBuilder, actionAttr);
         }
-
         /// <summary>
         /// Set 代理
         /// </summary>
