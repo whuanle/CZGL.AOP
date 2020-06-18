@@ -43,6 +43,8 @@ namespace CZGL.AOP
                 {
                     if (paramType.IsValueType)
                         iL.Emit(OpCodes.Box, paramType);
+                    else if (paramType != typeof(object))
+                        iL.Emit(OpCodes.Castclass,paramType);
                 }
 
                 if (paramType.IsByRef)       // ref 或 out
@@ -56,23 +58,25 @@ namespace CZGL.AOP
         /// 用于创建一个参数比推送到计算堆栈上
         /// </summary>
         /// <param name="iL"></param>
-        /// <param name="params">要传递的参数数组</param>
+        /// <param name="paramType">要传递的参数数组</param>
         /// <param name="type">需要创建的数组类型</param>
         /// <param name="isUnBox">是否拆箱<para>默认下，创建的数组是引用类型的数组如object，那么可能出现装箱操作；如果创建的是值类型数组，则可能发生拆箱操作</para></param>
-        public static void EmitOne(ILGenerator iL, Type @params, bool isUnBox = false)
+        public static void EmitOne(ILGenerator iL, Type paramType, bool isUnBox = false)
         {
             iL.Emit(OpCodes.Ldarg_1);
             // 拆箱
             if (isUnBox)
             {
-                if (!@params.IsValueType)
-                    iL.Emit(OpCodes.Unbox, @params);
+                if (!paramType.IsValueType)
+                    iL.Emit(OpCodes.Unbox, paramType);
             }
             // 装箱
             else
             {
-                if (@params.IsValueType)
-                    iL.Emit(OpCodes.Box, @params);
+                if (paramType.IsValueType)
+                    iL.Emit(OpCodes.Box, paramType);
+                else if (paramType != typeof(object))
+                    iL.Emit(OpCodes.Castclass, paramType);
             }
         }
 

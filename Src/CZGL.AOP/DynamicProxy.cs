@@ -204,7 +204,7 @@ namespace CZGL.AOP
                 // 设置当前代理类型
                 conIL.Emit(OpCodes.Ldarg_0);
                 conIL.Emit(OpCodes.Ldfld, aspectContextField);
-                conIL.Emit(OpCodes.Castclass,typeof(AspectContextBody));
+                conIL.Emit(OpCodes.Castclass, typeof(AspectContextBody));
                 conIL.Emit(OpCodes.Ldarg_0);
                 conIL.Emit(OpCodes.Call, parentType.GetMethod(nameof(GetType)));
                 conIL.Emit(OpCodes.Callvirt, typeof(AspectContextBody).GetMethod($"set_{nameof(AspectContextBody.Type)}"));
@@ -313,7 +313,7 @@ namespace CZGL.AOP
                     MethodBuilder setMethodBuilder = typeBuilder.DefineMethod(
                         getMethodInfo.Name,
                         MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig,
-                        CallingConventions.Standard,
+                        getMethodInfo.CallingConvention,
                         getMethodInfo.ReturnType,
                         null);
                     PropertyGetProxy(setMethodBuilder.GetILGenerator(), parentType, getMethodInfo, item, aspectContextField, fieldList[actionAttr.GetType()], actionAttr);
@@ -324,7 +324,7 @@ namespace CZGL.AOP
                     MethodBuilder getMethodBuilder = typeBuilder.DefineMethod(
                         setMethodInfo.Name,
                         MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig,
-                        CallingConventions.Standard,
+                        setMethodInfo.CallingConvention,
                         setMethodInfo.ReturnType,
                         setMethodInfo.GetParameters().Select(x => x.ParameterType).ToArray());
                     PropertyGetProxy(getMethodBuilder.GetILGenerator(), parentType, setMethodInfo, item, aspectContextField, fieldList[actionAttr.GetType()], actionAttr);
@@ -425,7 +425,7 @@ namespace CZGL.AOP
                 conIL.Emit(OpCodes.Ldelem_Ref);         // 将位于指定数组索引处的包含对象引用的元素作为 O 类型（对象引用）加载到计算堆栈的顶部。
 
                 if (paramTypes[i].IsValueType)   // 参数是值类型，需要拆箱
-                    conIL.Emit(OpCodes.Unbox, paramTypes[i]);     // 将值类型的已装箱的表示形式转换为其未装箱的形式。
+                    conIL.Emit(OpCodes.Unbox_Any, paramTypes[i]);     // 将值类型的已装箱的表示形式转换为其未装箱的形式。
                 else if (paramTypes[i] != typeof(object))
                     conIL.Emit(OpCodes.Castclass, paramTypes[i]);   // 将引用类型转为另一个引用类型
 
@@ -482,7 +482,7 @@ namespace CZGL.AOP
             // 创建一个新的上下文
             iL.Emit(OpCodes.Ldarg_0);       // this
             iL.Emit(OpCodes.Ldfld, aspectContextField); // _AspectContextBody
-            iL.Emit(OpCodes.Castclass,typeof(AspectContextBody));
+            iL.Emit(OpCodes.Castclass, typeof(AspectContextBody));
             iL.Emit(OpCodes.Callvirt, typeof(AspectContextBody).GetMethod($"get_{nameof(AspectContextBody.NewInstance)}")); // NewInstance
             iL.Emit(OpCodes.Stloc_0);       // 调用 aspectContextBody 的 NewInstance 属性
 
@@ -546,6 +546,10 @@ namespace CZGL.AOP
                     iL.Emit(OpCodes.Castclass, methodInfo.ReturnType);
                 iL.Emit(OpCodes.Stloc_1);
                 iL.Emit(OpCodes.Ldloc_1);       // 取出堆栈中的返回值
+            }
+            else
+            {
+                iL.Emit(OpCodes.Pop);
             }
             // ⑤
             iL.Emit(OpCodes.Ret);
@@ -636,9 +640,9 @@ namespace CZGL.AOP
                 iL.Emit(OpCodes.Ldloc_0);
                 iL.Emit(OpCodes.Callvirt, typeof(AspectContextBody).GetMethod($"get_{nameof(AspectContextBody.PropertyValue)}"));
                 if (returnType.IsValueType)
-                    iL.Emit(OpCodes.Box, returnType);
+                    iL.Emit(OpCodes.Box, methodInfo.GetParameters().Select(x => x.ParameterType).First());
                 else if (returnType != typeof(object))
-                    iL.Emit(OpCodes.Castclass, returnType);
+                    iL.Emit(OpCodes.Castclass, methodInfo.GetParameters().Select(x => x.ParameterType).First());
             }
             else
             {

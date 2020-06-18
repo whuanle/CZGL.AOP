@@ -22,53 +22,29 @@ namespace FxDebug
             Console.WriteLine("执行后");
             if (context.IsMethod)
                 return context.MethodResult;
-            else
+            else if (context.IsProperty)
                 return context.PropertyValue;
+            return null;
         }
     }
 
     public interface ITest
     {
-        void MyMethod(string a);
+        void MyMethod();
     }
 
     [Interceptor]
     public class Test : ITest
     {
+        [Log] public virtual string A { get; set; }
         public Test()
         {
             Console.WriteLine("构造函数没问题");
         }
         [Log]
-        public virtual void MyMethod(string a)
+        public virtual void MyMethod()
         {
             Console.WriteLine("运行中");
-        }
-    }
-
-    public class TestAOPClass : Test
-    {
-        private readonly AspectContext _AspectContextBody;
-
-        private LogAttribute _LogAttribute;
-
-        public TestAOPClass():base()
-        {
-            _AspectContextBody = new AspectContextBody();
-            ((AspectContextBody)_AspectContextBody).Type = GetType();
-            ((AspectContextBody)_AspectContextBody).ConstructorParamters = new object[0];
-            _LogAttribute = new LogAttribute();
-        }
-
-        public override void MyMethod(string a)
-        {
-            AspectContextBody newInstance = ((AspectContextBody)_AspectContextBody).NewInstance;
-            newInstance.IsMethod = true;
-            newInstance.MethodInfo = (MethodInfo)MethodBase.GetCurrentMethod();
-            newInstance.MethodValues = new object[] { a};
-            _LogAttribute.Before(newInstance);
-            base.MyMethod((string)newInstance.MethodValues[0]);
-            _LogAttribute.After(newInstance);
         }
     }
 
@@ -76,8 +52,6 @@ namespace FxDebug
     {
         static void Main(string[] args)
         {
-            var s = typeof(Test).GetConstructors();
-            var z= typeof(TestAOPClass).GetConstructors();
             var name = DynamicProxy.GetAssemblyName();
             var ab = AssemblyBuilder.DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave);
             var am = ab.DefineDynamicModule("AOPDebugModule", "AOPDebug.dll");
@@ -89,8 +63,10 @@ namespace FxDebug
 
             ab.Save("AopDebug.dll");
 
-            test1.MyMethod("");
-            test2.MyMethod("");
+            var tmp = test2.GetType();
+            var tmpMethods = tmp.GetMethods();
+            test1.MyMethod();
+            test2.MyMethod();
 
             Console.ReadKey();
         }
