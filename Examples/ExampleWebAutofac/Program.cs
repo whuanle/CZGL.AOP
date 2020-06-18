@@ -21,7 +21,7 @@ namespace ExampleWebAutofac
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-                        .UseServiceProviderFactory(new AutofacServiceProviderFactory())
+                        .UseServiceProviderFactory(new CZGL.AOP.Autofac.AOPServiceProxviderFactory())
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();

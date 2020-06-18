@@ -7,10 +7,10 @@ using System.Text;
 
 namespace CZGL.AOP.Autofac
 {
-    /// <summary>
-    /// Autofac 注入服务
-    /// </summary>
-    public class AOPServiceProxviderFactory : IServiceProviderFactory<ContainerBuilder>
+	/// <summary>
+	/// Autofac 注入服务
+	/// </summary>
+	public class AOPServiceProxviderFactory : IServiceProviderFactory<ContainerBuilder>
     {
         AutofacServiceProviderFactory factory;
         public AOPServiceProxviderFactory(Action<ContainerBuilder> configurationAction = null)
@@ -18,8 +18,8 @@ namespace CZGL.AOP.Autofac
             factory = new AutofacServiceProviderFactory(configurationAction);
         }
         public ContainerBuilder CreateBuilder(IServiceCollection services)
-        {
-            return DependencyInjectionService.BuildAopProxy(services);
+		{
+			return DependencyInjectionService.BuildAopProxy(services);
         }
 
         public IServiceProvider CreateServiceProvider(ContainerBuilder containerBuilder)

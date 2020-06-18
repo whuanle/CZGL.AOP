@@ -32,6 +32,8 @@ namespace ExampleConsole
     [Interceptor]
     public class Test : ITest
     {
+        public Test() { }
+        public Test(string a, string b) { }
         [Log] public virtual string A { get; set; }
         [Log]
         public virtual void MyMethod()
@@ -54,16 +56,28 @@ namespace ExampleConsole
     {
         static void Main(string[] args)
         {
+            // 通过接口
             ITest test1 = AopInterceptor.CreateProxyOfInterface<ITest, Test>();
+            // 通过类
             Test test2 = AopInterceptor.CreateProxyOfClass<Test>();
             test1.MyMethod();
             test2.MyMethod();
 
+            // 指定构造函数
+            test2 = AopInterceptor.CreateProxyOfClass<Test>("aaa", "bbb");
+            test2.MyMethod();
+
             Console.WriteLine("---");
 
-            TestNo test3 = AopInterceptor.CreateProxyOfType<TestNo>(new ProxyTypeBuilder()
-                .AddProxyMethod(typeof(LogAttribute), typeof(TestNo).GetMethod("MyMethod")));
+            // 非侵入式代理
+            TestNo test3 = AopInterceptor.CreateProxyOfType<TestNo>(
+                new ProxyTypeBuilder(new Type[] { typeof(LogAttribute) })
+                .AddProxyMethod("LogAttribute", typeof(TestNo).GetMethod(nameof(TestNo.MyMethod)))
+                .AddProxyMethod("LogAttribute", typeof(TestNo).GetProperty(nameof(TestNo.A)).GetSetMethod()));
+
             test3.MyMethod();
+            test3.A = "666";
+
             Console.ReadKey();
         }
     }

@@ -2,6 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Authors>痴者工良</Authors>
+    <Description>一个简单轻量的AOP框架，支持非侵入式代理，支持.NET Core/ASP.NET Core，以及支持多种依赖注入框架。</Description>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DocumentationFile>CZGL.AOP.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

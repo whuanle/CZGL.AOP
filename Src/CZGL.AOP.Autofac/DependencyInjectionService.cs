@@ -19,26 +19,68 @@ namespace CZGL.AOP.Autofac
         /// </summary>
         /// <param name="service"></param>
         /// <returns></returns>
-        public static ContainerBuilder BuildAopProxy(IServiceCollection service)
+        public static ContainerBuilder BuildAopProxy(IServiceCollection services)
         {
-            if (service is null)
-                throw new ArgumentNullException(nameof(service));
+            if (services is null)
+                throw new ArgumentNullException(nameof(services));
 
-            ContainerBuilder proxyServiceCollection = new ContainerBuilder();
+            // 将 ASP.NET Core 中的依赖注入服务转到 Autofac 中
+            ContainerBuilder containerBuilder = new ContainerBuilder();
+            containerBuilder.Populate(CreateBuildAopProxy(services));
 
-            // 将容器中的设置拦截器的类型生成新的类型代理
+            return containerBuilder;
+        }
+
+        /// <summary>
+        /// 使用 CZGL.AOP 处理容器中需要代理的类型
+        /// </summary>
+        /// <param name="service"></param>
+        /// <returns></returns>
+        private static IServiceCollection CreateBuildAopProxy(this IServiceCollection service)
+        {
+            IServiceCollection proxyServiceCollection = new ServiceCollection();
+
             foreach (ServiceDescriptor item in service)
             {
-                // 第一步，判断是否为继承
-                // 第二步，传递暴露的接口或其它服务
-                // 第三步，传递参数并生成代理类型
-
-                // 第四步，判断作用域生命周期
-                // 第五步，添加到容器中
-
                 Type newType;
                 Type serviceType = item.ServiceType;
                 Type implementationType = item.ImplementationType;
+
+                if (implementationType is null)
+                {
+                    if (item.ImplementationInstance != null)
+                    {
+                        switch (item.Lifetime)
+                        {
+                            case ServiceLifetime.Singleton:
+                                proxyServiceCollection.AddSingleton(serviceType, item.ImplementationInstance);
+                                break;
+                            case ServiceLifetime.Scoped:
+                                proxyServiceCollection.AddScoped(serviceType);
+                                break;
+                            case ServiceLifetime.Transient:
+                                proxyServiceCollection.AddSingleton(serviceType, item.ImplementationInstance);
+                                break;
+                        }
+                    }
+
+                    else
+                    {
+                        switch (item.Lifetime)
+                        {
+                            case ServiceLifetime.Singleton:
+                                proxyServiceCollection.AddSingleton(serviceType, item.ImplementationFactory);
+                                break;
+                            case ServiceLifetime.Scoped:
+                                proxyServiceCollection.AddScoped(serviceType, item.ImplementationFactory);
+                                break;
+                            case ServiceLifetime.Transient:
+                                proxyServiceCollection.AddTransient(serviceType, item.ImplementationFactory);
+                                break;
+                        }
+                    }
+                    continue;
+                }
 
                 if (serviceType == implementationType)
                 {
@@ -48,11 +90,10 @@ namespace CZGL.AOP.Autofac
                 {
                     newType = DynamicProxy.CreateProxyClassType(item.ServiceType, item.ImplementationType, false);
                 }
-                proxyServiceCollection.RegisterInstance(ServiceDescriptor.Describe(serviceType, newType, item.Lifetime));
+                proxyServiceCollection.Add(ServiceDescriptor.Describe(serviceType, newType, item.Lifetime));
             }
             return proxyServiceCollection;
         }
-
         /// <summary>
         /// 使用 CZGL.AOP 处理容器中需要代理的类型
         /// </summary>
@@ -71,7 +112,7 @@ namespace CZGL.AOP.Autofac
                 Type newType;
                 Type serviceType = item.Services.OfType<IServiceWithType>().Select(x => x.ServiceType).FirstOrDefault();
                 Type implementationType = item.Activator.LimitType;
-                if (implementationType.GetCustomAttribute(typeof(InterceptorAttribute)) == null)
+                if (implementationType?.GetCustomAttribute(typeof(InterceptorAttribute)) == null)
                 {
                     proxyServiceCollection.RegisterComponent(item);
                     continue;
@@ -84,7 +125,8 @@ namespace CZGL.AOP.Autofac
                 {
                     newType = DynamicProxy.CreateProxyClassType(serviceType, implementationType, false);
                 }
-                proxyServiceCollection.RegisterType(implementationType).As(serviceType).InstancePerMatchingLifetimeScope(item.MatchingLifetimeScopeTags());
+                proxyServiceCollection.RegisterComponent(item);
+                proxyServiceCollection.RegisterType(newType).As(serviceType);
             }
             return proxyServiceCollection.Build();
         }

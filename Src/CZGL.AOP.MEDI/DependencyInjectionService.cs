@@ -34,6 +34,42 @@ namespace CZGL.AOP.MEDI
                 Type serviceType = item.ServiceType;
                 Type implementationType = item.ImplementationType;
 
+                if (implementationType is null)
+                {
+                    if (item.ImplementationInstance != null)
+                    {
+                        switch (item.Lifetime)
+                        {
+                            case ServiceLifetime.Singleton:
+                                proxyServiceCollection.AddSingleton(serviceType, item.ImplementationInstance);
+                                break;
+                            case ServiceLifetime.Scoped:
+                                proxyServiceCollection.AddScoped(serviceType);
+                                break;
+                            case ServiceLifetime.Transient:
+                                proxyServiceCollection.AddSingleton(serviceType, item.ImplementationInstance);
+                                break;
+                        }
+                    }
+
+                    else
+                    {
+                        switch (item.Lifetime)
+                        {
+                            case ServiceLifetime.Singleton:
+                                proxyServiceCollection.AddSingleton(serviceType, item.ImplementationFactory);
+                                break;
+                            case ServiceLifetime.Scoped:
+                                proxyServiceCollection.AddScoped(serviceType, item.ImplementationFactory);
+                                break;
+                            case ServiceLifetime.Transient:
+                                proxyServiceCollection.AddTransient(serviceType, item.ImplementationFactory);
+                                break;
+                        }
+                    }
+                    continue;
+                }
+
                 if (serviceType == implementationType)
                 {
                     newType = DynamicProxy.CreateProxyClassType(item.ImplementationType);

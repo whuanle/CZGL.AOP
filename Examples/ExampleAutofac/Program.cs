@@ -9,18 +9,19 @@ namespace ExampleAutofac
 {
     public interface ITest
     {
-        void TLine();
+        void MyMethod();
     }
+
     [Interceptor]
     public class Test : ITest
     {
         [Log]
-        public void TLine()
+        public virtual void MyMethod()
         {
             Console.WriteLine("执行中");
         }
     }
-    
+
     public class LogAttribute : ActionAttribute
     {
         public override void Before(AspectContext context)
@@ -30,7 +31,11 @@ namespace ExampleAutofac
         public override object After(AspectContext context)
         {
             Console.WriteLine("执行后");
-            return default;
+            if (context.IsMethod)
+                return context.MethodResult;
+            else if (context.IsProperty)
+                return context.PropertyValue;
+            return null;
         }
     }
 
@@ -42,13 +47,15 @@ namespace ExampleAutofac
             ContainerBuilder builder = new ContainerBuilder();
             builder.RegisterType<Test>().As<ITest>();
             var container = builder.Build().BuildAopProxy();
+
             using (ILifetimeScope scope = container.BeginLifetimeScope())
             {
                 // 获取实例
                 ITest myService = scope.Resolve<ITest>();
-                myService.TLine();
+                myService.MyMethod();
             }
-            Console.WriteLine("Hello World!");
+
+            Console.ReadKey();
         }
     }
 }

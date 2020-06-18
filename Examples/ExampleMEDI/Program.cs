@@ -8,23 +8,17 @@ namespace ExampleMEDI
     {
         public override void Before(AspectContext context)
         {
-            if (context.IsMethod)
-            {
-                Console.Write($"当前类型：{context.Type} 当前执行方法：{context.MethodInfo.Name} 当前方法的参数列表：");
-                // 这里的示例参数都是 string，实际情况请自行判断
-                foreach (var item in context.MethodValues)
-                {
-                    Console.Write(item);
-                }
-            }
-            Console.WriteLine();
             Console.WriteLine("执行前");
         }
 
         public override object After(AspectContext context)
         {
             Console.WriteLine("执行后");
-            return default;
+            if (context.IsMethod)
+                return context.MethodResult;
+            else if (context.IsProperty)
+                return context.PropertyValue;
+            return null;
         }
     }
     public interface ITest
@@ -57,11 +51,14 @@ namespace ExampleMEDI
     {
         static void Main(string[] args)
         {
+            // 使用Microsoft.Extensions.DependencyInjection依赖注入框架
             DependencyInjectionBuilder builder = new DependencyInjectionBuilder();
             builder.AddService<ITest, Test>();
-            var service = builder.Build();
+            IServiceProvider service = builder.Build();
+
+
             ITest obj = service.Get<ITest>();
-            obj.MyMethod("","");
+            obj.MyMethod("", "");
             Console.ReadKey();
         }
     }

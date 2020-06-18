@@ -41,10 +41,12 @@ namespace ExampleMEDI
             return this;
         }
 
+        /// <summary>
+        /// 生成容器
+        /// </summary>
+        /// <returns></returns>
         public IServiceProvider Build()
         {
-            // var serviceProvider = _services.BuildServiceProvider()
-            // BuildDynamicProxyProvider 是 Freesql.DynamicProxy 的拓展方法
             var serviceProvider = _services.BuildAopProxy().BuildServiceProvider();
             return serviceProvider;
         }

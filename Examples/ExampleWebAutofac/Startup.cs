@@ -32,9 +32,8 @@ namespace ExampleWebAutofac
         public void ConfigureContainer(ContainerBuilder builder)
         {
             builder.RegisterType<Test>().As<ITest>();
-            builder.BuildAopProxy();
-            var z = builder.Build().ComponentRegistry.Registrations;
         }
+
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {

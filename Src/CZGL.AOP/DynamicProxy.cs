@@ -125,6 +125,10 @@ namespace CZGL.AOP
         /// <returns></returns>
         public static Type CreateProxyClassType(Type interfaceType, Type implementationType, bool Inherit = false)
         {
+            // ASP.NET Core 中，可能只有接口
+            if (implementationType == null)
+                return null;
+
             Type type = implementationType;
 
             if (implementationType.GetCustomAttribute(typeof(InterceptorAttribute)) == null)
@@ -135,13 +139,13 @@ namespace CZGL.AOP
             {
                 if (CacheProxyClass.ContainsKey(implementationType))
                     return CacheProxyClass[type];
-                typeBuilder = moduleBuilder.DefineType(type.Name + _TypeName, type.Attributes, type);
+                typeBuilder = moduleBuilder.DefineType("CZGLAOP."+type.Name + _TypeName, type.Attributes, type);
             }
             else
             {
                 if (CacheProxyClass.ContainsKey(implementationType))
                     return CacheProxyClass[interfaceType];
-                typeBuilder = moduleBuilder.DefineType(type.Name + _TypeName, type.Attributes, type);
+                typeBuilder = moduleBuilder.DefineType("CZGLAOP." + type.Name + _TypeName, type.Attributes, type);
             }
 
             // 判断是否为泛型，如果是则构造其为泛型
@@ -168,7 +172,7 @@ namespace CZGL.AOP
             TypeBuilder typeBuilder;
                 if (CacheProxyClass.ContainsKey(implementationType))
                     return CacheProxyClass[type];
-                typeBuilder = moduleBuilder.DefineType(type.Name + _TypeName, type.Attributes, type);
+                typeBuilder = moduleBuilder.DefineType("CZGLAOP." + type.Name + _TypeName, type.Attributes, type);
 
             // 判断是否为泛型，如果是则构造其为泛型
             bool isGeneric = EmitHelper.DefineGenericParameters(typeBuilder, type);
