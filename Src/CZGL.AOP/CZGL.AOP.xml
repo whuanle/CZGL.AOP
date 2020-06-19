@@ -1,0 +1,489 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>CZGL.AOP</name>
+    </assembly>
+    <members>
+        <member name="T:CZGL.AOP.ActionAttribute">
+            <summary>
+            代理
+            <para>此特性可以拦截方法、属性</para>
+            </summary>
+        </member>
+        <member name="M:CZGL.AOP.AopInterceptor.CreateProxyOfInterface``2(System.Object[])">
+            <summary>
+            从接口生成代理类
+            </summary>
+            <typeparam name="TInterface">接口</typeparam>
+            <typeparam name="TType">实现的类型</typeparam>
+            <param name="parameters">构造函数的参数</param>
+            <returns></returns>
+        </member>
+        <member name="M:CZGL.AOP.AopInterceptor.CreateProxyOfClass``1(System.Object[])">
+            <summary>
+            生成代理类型
+            </summary>
+            <typeparam name="TType">代理类型</typeparam>
+            <param name="parameters">构造函数的参数</param>
+            <returns>生成代理类</returns>
+        </member>
+        <member name="M:CZGL.AOP.AopInterceptor.CreateProxyOfType``1(CZGL.AOP.ProxyTypeBuilder,System.Object[])">
+            <summary>
+            通过指定 Type 来代理属性或方法
+            <para>此方式可以实现非入侵性代理类型</para>
+            </summary>
+            <param name="builder"></param>
+            <param name="propertys"></param>
+        </member>
+        <member name="M:CZGL.AOP.AopInterceptor.CreateProxyOfInterface``2(System.Object)">
+            <summary>
+            从接口生成代理类
+            </summary>
+            <typeparam name="TInterface">接口</typeparam>
+            <typeparam name="TType">实现的类型</typeparam>
+            <param name="parameters">构造函数的参数</param>
+            <returns></returns>
+        </member>
+        <member name="M:CZGL.AOP.AopInterceptor.CreateProxyOfInterface``2(System.Object,System.Object)">
+            <summary>
+            从接口生成代理类
+            </summary>
+            <typeparam name="TInterface">接口</typeparam>
+            <typeparam name="TType">实现的类型</typeparam>
+            <param name="parameters">构造函数的参数</param>
+            <returns></returns>
+        </member>
+        <member name="M:CZGL.AOP.AopInterceptor.CreateProxyOfInterface``2(System.Object,System.Object,System.Object)">
+            <summary>
+            从接口生成代理类
+            </summary>
+            <typeparam name="TInterface">接口</typeparam>
+            <typeparam name="TType">实现的类型</typeparam>
+            <param name="parameters">构造函数的参数</param>
+            <returns></returns>
+        </member>
+        <member name="M:CZGL.AOP.AopInterceptor.CreateProxyOfInterface``2(System.Object,System.Object,System.Object,System.Object)">
+            <summary>
+            从接口生成代理类
+            </summary>
+            <typeparam name="TInterface">接口</typeparam>
+            <typeparam name="TType">实现的类型</typeparam>
+            <param name="parameters">构造函数的参数</param>
+            <returns></returns>
+        </member>
+        <member name="M:CZGL.AOP.AopInterceptor.CreateProxyOfInterface``2(System.Object,System.Object,System.Object,System.Object,System.Object)">
+            <summary>
+            从接口生成代理类
+            </summary>
+            <typeparam name="TInterface">接口</typeparam>
+            <typeparam name="TType">实现的类型</typeparam>
+            <param name="parameters">构造函数的参数</param>
+            <returns></returns>
+        </member>
+        <member name="M:CZGL.AOP.AopInterceptor.CreateProxyOfInterface``2(System.Object,System.Object,System.Object,System.Object,System.Object,System.Object)">
+            <summary>
+            从接口生成代理类
+            </summary>
+            <typeparam name="TInterface">接口</typeparam>
+            <typeparam name="TType">实现的类型</typeparam>
+            <param name="parameters">构造函数的参数</param>
+            <returns></returns>
+        </member>
+        <member name="M:CZGL.AOP.AopInterceptor.CreateProxyOfInterface``2(System.Object,System.Object,System.Object,System.Object,System.Object,System.Object,System.Object)">
+            <summary>
+            从接口生成代理类
+            </summary>
+            <typeparam name="TInterface">接口</typeparam>
+            <typeparam name="TType">实现的类型</typeparam>
+            <param name="parameters">构造函数的参数</param>
+            <returns></returns>
+        </member>
+        <member name="M:CZGL.AOP.AopInterceptor.CreateProxyOfInterface``2(System.Object,System.Object,System.Object,System.Object,System.Object,System.Object,System.Object,System.Object)">
+            <summary>
+            从接口生成代理类
+            </summary>
+            <typeparam name="TInterface">接口</typeparam>
+            <typeparam name="TType">实现的类型</typeparam>
+            <param name="parameters">构造函数的参数</param>
+            <returns></returns>
+        </member>
+        <member name="M:CZGL.AOP.AopInterceptor.CreateProxyOfClass``1(System.Object)">
+            <summary>
+            生成代理类型
+            </summary>
+            <typeparam name="TType">代理类型</typeparam>
+            <param name="parameters">构造函数的参数</param>
+            <returns>生成代理类</returns>
+        </member>
+        <member name="M:CZGL.AOP.AopInterceptor.CreateProxyOfClass``1(System.Object,System.Object)">
+            <summary>
+            生成代理类型
+            </summary>
+            <typeparam name="TType">代理类型</typeparam>
+            <param name="parameters">构造函数的参数</param>
+            <returns>生成代理类</returns>
+        </member>
+        <member name="M:CZGL.AOP.AopInterceptor.CreateProxyOfClass``1(System.Object,System.Object,System.Object)">
+            <summary>
+            生成代理类型
+            </summary>
+            <typeparam name="TType">代理类型</typeparam>
+            <param name="parameters">构造函数的参数</param>
+            <returns>生成代理类</returns>
+        </member>
+        <member name="M:CZGL.AOP.AopInterceptor.CreateProxyOfClass``1(System.Object,System.Object,System.Object,System.Object)">
+            <summary>
+            生成代理类型
+            </summary>
+            <typeparam name="TType">代理类型</typeparam>
+            <param name="parameters">构造函数的参数</param>
+            <returns>生成代理类</returns>
+        </member>
+        <member name="M:CZGL.AOP.AopInterceptor.CreateProxyOfClass``1(System.Object,System.Object,System.Object,System.Object,System.Object)">
+            <summary>
+            生成代理类型
+            </summary>
+            <typeparam name="TType">代理类型</typeparam>
+            <param name="parameters">构造函数的参数</param>
+            <returns>生成代理类</returns>
+        </member>
+        <member name="M:CZGL.AOP.AopInterceptor.CreateProxyOfClass``1(System.Object,System.Object,System.Object,System.Object,System.Object,System.Object)">
+            <summary>
+            生成代理类型
+            </summary>
+            <typeparam name="TType">代理类型</typeparam>
+            <param name="parameters">构造函数的参数</param>
+            <returns>生成代理类</returns>
+        </member>
+        <member name="M:CZGL.AOP.AopInterceptor.CreateProxyOfClass``1(System.Object,System.Object,System.Object,System.Object,System.Object,System.Object,System.Object)">
+            <summary>
+            生成代理类型
+            </summary>
+            <typeparam name="TType">代理类型</typeparam>
+            <param name="parameters">构造函数的参数</param>
+            <returns>生成代理类</returns>
+        </member>
+        <member name="M:CZGL.AOP.AopInterceptor.CreateProxyOfClass``1(System.Object,System.Object,System.Object,System.Object,System.Object,System.Object,System.Object,System.Object)">
+            <summary>
+            生成代理类型
+            </summary>
+            <typeparam name="TType">代理类型</typeparam>
+            <param name="parameters">构造函数的参数</param>
+            <returns>生成代理类</returns>
+        </member>
+        <member name="M:CZGL.AOP.AopInterceptor.ThrowHasConstructor(System.Type,System.Type[])">
+            <summary>
+            检查是否有相应的构造函数
+            </summary>
+            <param name="type">类型</param>
+            <param name="types">传递的构造函数的参数</param>
+        </member>
+        <member name="T:CZGL.AOP.AspectContext">
+            <summary>
+            拦截器上下文
+            </summary>
+        </member>
+        <member name="P:CZGL.AOP.AspectContext.Type">
+            <summary>
+            当前被代理类的类型
+            </summary>
+        </member>
+        <member name="P:CZGL.AOP.AspectContext.ConstructorParamters">
+            <summary>
+            构造函数传递的参数列表
+            <para>如果此方法没有参数，则 MethodValues.Length = 0，而不是为 null </para>
+            </summary>
+        </member>
+        <member name="P:CZGL.AOP.AspectContext.IsProperty">
+            <summary>
+            拦截的是否为属性
+            </summary>
+        </member>
+        <member name="P:CZGL.AOP.AspectContext.PropertyInfo">
+            <summary>
+            获取运行的属性信息
+            </summary>
+        </member>
+        <member name="P:CZGL.AOP.AspectContext.PropertyValue">
+            <summary>
+            获取拦截的属性值，get 或 set 时的值
+            </summary>
+        </member>
+        <member name="P:CZGL.AOP.AspectContext.IsMethod">
+            <summary>
+            当前代理的是否为方法
+            </summary>
+        </member>
+        <member name="P:CZGL.AOP.AspectContext.MethodInfo">
+            <summary>
+            获取运行的方法信息
+            </summary>
+        </member>
+        <member name="P:CZGL.AOP.AspectContext.MethodValues">
+            <summary>
+            方法传递的参数
+            <para>如果此方法没有参数，则 MethodValues.Length = 0，而不是为 null </para>
+            </summary>
+        </member>
+        <member name="P:CZGL.AOP.AspectContext.MethodResult">
+            <summary>
+            方法执行返回的结果(如果有)
+            </summary>
+        </member>
+        <member name="P:CZGL.AOP.AspectContextBody.NewInstance">
+            <summary>
+            创建一个新的上下文对象
+            </summary>
+        </member>
+        <member name="T:CZGL.AOP.DynamicProxy">
+            <summary>
+            生成动态代理
+            </summary>
+        </member>
+        <member name="F:CZGL.AOP.DynamicProxy.CacheProxyClass">
+            <summary>
+            用于缓存已经生成过的代理类型
+            </summary>
+        </member>
+        <member name="M:CZGL.AOP.DynamicProxy.CreateInterceptor``2(System.Object[],System.Boolean)">
+            <summary>
+            生成代理类型
+            </summary>
+            <typeparam name="TInterface">接口或类</typeparam>
+            <typeparam name="TType">类</typeparam>
+            <param name="parameters">构造函数参数</param>
+            <param name="Inherit">是否为类</param>
+            <returns></returns>
+        </member>
+        <member name="M:CZGL.AOP.DynamicProxy.CreateInterceptor``1(System.Type,CZGL.AOP.NoActionAttributeModel,System.Object[])">
+            <summary>
+             创建非侵入式代理类型
+            </summary>
+            <typeparam name="TType"></typeparam>
+            <param name="implementationType"></param>
+            <param name="noAction"></param>
+            <param name="parameters"></param>
+            <returns></returns>
+        </member>
+        <member name="M:CZGL.AOP.DynamicProxy.CreateProxyClassType(System.Type)">
+            <summary>
+            创建代理类型
+            </summary>
+            <param name="implementationType">当前类型</param>
+            <param name="Inherit">是否直接继承类型</param>
+            <returns></returns>
+        </member>
+        <member name="M:CZGL.AOP.DynamicProxy.CreateProxyClassType``2(System.Boolean)">
+            <summary>
+            生成代理类型
+            </summary>
+            <typeparam name="TInterface"></typeparam>
+            <typeparam name="TType"></typeparam>
+            <param name="parameters"></param>
+            <param name="Inherit"></param>
+            <returns></returns>
+        </member>
+        <member name="M:CZGL.AOP.DynamicProxy.CreateProxyClassType(System.Type,System.Type,System.Boolean)">
+            <summary>
+            生成代理类型
+            </summary>
+            <param name="interfaceType">实现的接口或继承</param>
+            <param name="implementationType">实现的类型</param>
+            <param name="Inherit">是否通过继承生成</param>
+            <returns></returns>
+        </member>
+        <member name="M:CZGL.AOP.DynamicProxy.CreateProxyClassTypeNoAttribute(System.Type,CZGL.AOP.NoActionAttributeModel)">
+            <summary>
+            通过非侵入式来生成代理类型
+            </summary>
+            <param name="interfaceType">实现的接口或继承</param>
+            <param name="implementationType">实现的类型</param>
+            <param name="Inherit">是否通过继承生成</param>
+            <returns></returns>
+        </member>
+        <member name="M:CZGL.AOP.DynamicProxy.ActionInterceptor``1(System.Reflection.Emit.TypeBuilder,System.Boolean)">
+            <summary>
+            拦截 Action 并且生成类型
+            </summary>
+            <typeparam name="TType">被代理的类</typeparam>
+            <param name="typeBuilder">生成器</param>
+            <param name="parameters">构造函数参数</param>
+            <param name="type">被代理的类的类型</param>
+            <param name="Inherit">是否属于类继承</param>
+        </member>
+        <member name="M:CZGL.AOP.DynamicProxy.ActionInterceptor(System.Type,System.Reflection.Emit.TypeBuilder,System.Boolean,CZGL.AOP.NoActionAttributeModel)">
+            <summary>
+            拦截 Action 并且生成类型
+            </summary>
+            <typeparam name="TType">被代理的类</typeparam>
+            <param name="parentType">父类</param>
+            <param name="typeBuilder">生成器</param>
+            <param name="Inherit">是否属于类继承</param>
+            <param name="noAction">非嵌入式代理时</param>
+        </member>
+        <member name="M:CZGL.AOP.DynamicProxy.GetActionAttribute(System.Reflection.PropertyInfo[],System.Reflection.MethodInfo[],System.Reflection.Emit.TypeBuilder)">
+            <summary>
+            获取这个类型属性和方法使用了修饰的拦截器特性
+            </summary>
+            <param name="propertyInfos">被代理类的所有公开属性</param>
+            <param name="methodInfos">被代理类的所有公开方法</param>
+            <param name="typeBuilder">代理类的生成器</param>
+            <returns></returns>
+        </member>
+        <member name="M:CZGL.AOP.DynamicProxy.NewConstructor(System.Reflection.Emit.ILGenerator,System.Collections.Generic.Dictionary{System.Type,System.Reflection.Emit.FieldBuilder})">
+            <summary>
+            在构造函数中实例化拦截器
+            </summary>
+            <param name="il"></param>
+            <param name="types"></param>
+        </member>
+        <member name="M:CZGL.AOP.DynamicProxy.MethodProxyParamters(System.Reflection.MethodInfo,System.Reflection.Emit.ILGenerator,System.Reflection.MethodInfo)">
+            <summary>
+            用于拦截方法参数，然后从上下文中传递过去
+            <para></para>
+            </summary>
+            <param name="methoded">被代理的方法</param>
+            <param name="conIL"></param>
+            <param name="contextMethod">上下文存储方法参数的属性的get方法</param>
+        </member>
+        <member name="M:CZGL.AOP.DynamicProxy.MethodParamters(System.Int32,System.Reflection.Emit.ILGenerator)">
+            <summary>
+            为方法、构造函数处理参数
+            <para>只能使用 1 开始的地址，在调用此方法前，你可能需要调用 OpCodes.Ldarg_0 </para>
+            </summary>
+            <param name="length"></param>
+            <param name="conIL"></param>
+        </member>
+        <member name="M:CZGL.AOP.DynamicProxy.MethodProxy(System.Reflection.Emit.ILGenerator,System.Reflection.MethodInfo,System.Reflection.Emit.FieldBuilder,System.Reflection.Emit.FieldBuilder,System.Type)">
+            <summary>
+            生成代理方法
+            </summary>
+            <param name="iL">IL生成器</param>
+            <param name="methodInfo">被代理的方法</param>
+            <param name="aspectContextField">类的上下文</param>
+            <param name="fieldBuilder">使用的拦截器字段</param>
+            <param name="actionAttr">使用的拦截器</param>
+        </member>
+        <member name="M:CZGL.AOP.DynamicProxy.PropertyGetProxy(System.Reflection.Emit.ILGenerator,System.Type,System.Reflection.MethodInfo,System.Reflection.PropertyInfo,System.Reflection.Emit.FieldBuilder,System.Reflection.Emit.FieldBuilder,CZGL.AOP.ActionAttribute)">
+            <summary>
+            Get 代理
+            </summary>
+        </member>
+        <member name="M:CZGL.AOP.DynamicProxy.PropertySetProxy(System.Reflection.Emit.ILGenerator,System.Type,System.Reflection.MethodInfo,System.Reflection.PropertyInfo,System.Reflection.Emit.FieldBuilder,System.Reflection.Emit.FieldBuilder,CZGL.AOP.ActionAttribute)">
+            <summary>
+            Set 代理
+            </summary>
+        </member>
+        <member name="M:CZGL.AOP.DynamicProxy.PropertyProxy(System.Reflection.Emit.ILGenerator,System.Type,System.Reflection.MethodInfo,System.Reflection.PropertyInfo,System.Reflection.Emit.FieldBuilder,System.Reflection.Emit.FieldBuilder,CZGL.AOP.ActionAttribute)">
+            <summary>
+            生成属性的代理方法
+            </summary>
+            <param name="iL">IL生成器</param>
+            <param name="type">被代理的类</param>
+            <param name="methodInfo">被代理的方法,Get或Set方法</param>
+            <param name="propertyInfo">当前被代理的属性</param>
+            <param name="aspectContextField">类的上下文</param>
+            <param name="fieldBuilder">使用的拦截器字段</param>
+            <param name="actionAttr">使用的拦截器</param>
+        </member>
+        <member name="M:CZGL.AOP.EmitHelper.EmitArr(System.Reflection.Emit.ILGenerator,System.Reflection.ParameterInfo[],System.Type,System.Boolean)">
+            <summary>
+            用于创建数组比推送到计算堆栈上
+            </summary>
+            <param name="iL"></param>
+            <param name="params">要传递的参数数组</param>
+            <param name="type">需要创建的数组类型</param>
+            <param name="isUnBox">是否拆箱<para>默认下，创建的数组是引用类型的数组如object，那么可能出现装箱操作；如果创建的是值类型数组，则可能发生拆箱操作</para></param>
+        </member>
+        <member name="M:CZGL.AOP.EmitHelper.EmitOne(System.Reflection.Emit.ILGenerator,System.Type,System.Boolean)">
+            <summary>
+            用于创建一个参数比推送到计算堆栈上
+            </summary>
+            <param name="iL"></param>
+            <param name="paramType">要传递的参数数组</param>
+            <param name="type">需要创建的数组类型</param>
+            <param name="isUnBox">是否拆箱<para>默认下，创建的数组是引用类型的数组如object，那么可能出现装箱操作；如果创建的是值类型数组，则可能发生拆箱操作</para></param>
+        </member>
+        <member name="M:CZGL.AOP.EmitHelper.EmitLdarg(System.Reflection.Emit.ILGenerator,System.Int32)">
+            <summary>
+            将索引为 n 的自变量加载到计算堆栈上。
+            </summary>
+            <param name="iL"></param>
+            <param name="n"></param>
+        </member>
+        <member name="M:CZGL.AOP.EmitHelper.GetVisibility(System.Reflection.MethodInfo)">
+            <summary>
+            获取成员方法的访问修饰符
+            </summary>
+            <param name="info"></param>
+            <returns></returns>
+        </member>
+        <member name="M:CZGL.AOP.EmitHelper.DefineGenericParameters(System.Reflection.Emit.TypeBuilder,System.Type)">
+            <summary>
+            定义一个泛型类型
+            <para>如果发现并不需要定义泛型，则不会操作</para>
+            </summary>
+            <param name="typeBuilder"></param>
+            <param name="paramterType">要生成的相应类型的泛型参数列表</param>
+            <returns>是否为泛型</returns>
+        </member>
+        <member name="M:CZGL.AOP.EmitHelper.CreateGenericClass(System.Type,System.Type)">
+            <summary>
+            创建一个泛型类型
+            </summary>
+            <param name="type">泛型类型</param>
+            <param name="parentType">父类型</param>
+        </member>
+        <member name="M:CZGL.AOP.EmitHelper.CreateGenericMethod(System.Reflection.Emit.MethodBuilder,System.Reflection.MethodInfo)">
+            <summary>
+            创建泛型方法
+            </summary>
+            <param name="methodBuilder"></param>
+            <param name="methodInfo"></param>
+            <returns></returns>
+        </member>
+        <member name="T:CZGL.AOP.InterceptorAttribute">
+            <summary>
+            拦截器
+            <para>在需要拦截的类型中使用</para>
+            </summary>
+        </member>
+        <member name="M:CZGL.AOP.ProxyTypeBuilder.AddProxyMethod(System.Type,System.Reflection.MethodInfo)">
+            <summary>
+            拦截一个方法
+            </summary>
+            <param name="action">继承了 ActionAttribute 的拦截器</param>
+            <param name="info">要代理的方法 MethodInfo </param>
+            <returns></returns>
+        </member>
+        <member name="M:CZGL.AOP.ProxyTypeBuilder.AddProxyMethod(System.String,System.Reflection.MethodInfo)">
+            <summary>
+            拦截一个方法
+            </summary>
+            <param name="action">继承了 ActionAttribute 的拦截器</param>
+            <param name="info">要代理的方法 MethodInfo </param>
+            <returns></returns>
+        </member>
+        <member name="M:CZGL.AOP.ProxyTypeBuilder.AddProxyProperty(System.Type,System.Reflection.PropertyInfo)">
+            <summary>
+            拦截一个属性
+            </summary>
+            <param name="action">继承了 ActionAttribute 的拦截器</param>
+            <param name="info">要代理的方法 MethodInfo </param>
+            <returns></returns>
+        </member>
+        <member name="M:CZGL.AOP.ProxyTypeBuilder.AddProxyProperty(System.String,System.Reflection.PropertyInfo)">
+            <summary>
+            拦截一个属性
+            </summary>
+            <param name="action">继承了 ActionAttribute 的拦截器</param>
+            <param name="info">要代理的方法 MethodInfo </param>
+            <returns></returns>
+        </member>
+        <member name="T:CZGL.AOP.NoActionAttributeModel">
+            <summary>
+            用于传递非侵入式代理时的参数
+            </summary>
+        </member>
+    </members>
+</doc>

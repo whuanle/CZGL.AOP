@@ -107,7 +107,7 @@ namespace CZGL.AOP
     /// <summary>
     /// 用于传递非侵入式代理时的参数
     /// </summary>
-    internal class NoActionAttributeModel
+    public class NoActionAttributeModel
     {
         internal Dictionary<string, Type> Actions { get; set; }
         internal Dictionary<MethodInfo, string> MethodNames { get; set; } = new Dictionary<MethodInfo, string>();
